@@ -23,10 +23,22 @@ from time import time
 
 import numpy as np
 
-import pyximport
-pyximport.install(setup_args={'include_dirs':np.get_include()}, inplace=True, reload_support=True)
-
-from dp_core import make_dense_costs, score_path, sparse_dp, make_sparse_costs, dense_dp
+# Prefer using a precompiled extension; fall back to pyximport (Cython) only if needed
+try:
+    from .dp_core import make_dense_costs, score_path, sparse_dp, make_sparse_costs, dense_dp
+except Exception:
+    try:
+        from dp_core import make_dense_costs, score_path, sparse_dp, make_sparse_costs, dense_dp
+    except Exception:
+        try:
+            import pyximport
+            pyximport.install(setup_args={'include_dirs': np.get_include()}, inplace=True, reload_support=True)
+            try:
+                from .dp_core import make_dense_costs, score_path, sparse_dp, make_sparse_costs, dense_dp
+            except Exception:
+                from dp_core import make_dense_costs, score_path, sparse_dp, make_sparse_costs, dense_dp
+        except Exception as e:
+            raise ModuleNotFoundError('dp_core extension not available and Cython/pyximport not installed') from e
 
 logger = logging.getLogger('vecalign')  # set up in vecalign.py
 
